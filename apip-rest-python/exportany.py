@@ -19,7 +19,7 @@ def main(*mainargs):
         parser = argparse.ArgumentParser(description='This program exports all specified type of artifact (api, plan, application, gateway..) from APICS and persist them on the file system') 
         parser.add_argument('-cf','--configfile', dest='configfile', help='config file specifying server, auth, proxy and other details in json format;', default='apipcs_config.json', required=False)
         parser.add_argument('--destdir', dest='destdir', default='./', help='directory path on local file system where all the exported API artifacts will be saved to; defaults to current directory', required=False )
-        parser.add_argument('-i','--item', dest='item', help='type of artifacts (api, plan, application, gateway..) to be exported', required=True )
+        parser.add_argument('-i','--item', dest='item', help='type of artifacts (api, plan, application, gateway,service,servceaccount..) to be exported', required=True )
         cmdargs = parser.parse_args()
         #Feature specific args parse
         serverargs = (cmdargs.configfile,)

@@ -50,6 +50,10 @@ class apipserver(object):
         self._plan_ents_uri = self._serverurl+"/management/v1/plans/{}/entitlements"
         self._plan_sub_detail_uri = self._serverurl+"/management/v1/plans/{}/subscriptions/{}"
         self._plan_ent_detail_uri = self._serverurl+"/management/v1/plans/{}/entitlements/{}"
+        self._services_uri = self._serverurl+"/management/v1/services"
+        self._service_uri = self._serverurl+"/management/v1/services/{}"
+        self._serviceaccounts_uri = self._serverurl+"/management/v1/serviceaccounts"
+        self._serviceaccount_uri = self._serverurl+"/management/v1/serviceaccounts/{}"
         #All Grants to be exported! No Import
         self._api_grants_uri = self._serverurl+"/management/v1/apis/{}/grants"
         self._app_grants_uri = self._serverurl+"/management/v1/applications/{}/grants"
@@ -68,8 +72,8 @@ class apipserver(object):
         self._gw_dep_uri = self._serverurl+"/management/v1/gateways/{}/deployments/{}" #exists, not using for now; above gw_deps is good enough
         self._api_resources_uri = self._serverurl+"/management/v1/apis/{}/resources"
         self._api_resources_uri = self._serverurl+"/management/v1/apis/{}/resources/{}"
-        self._level1uris = dict(api=self._apis_uri, application=self._apps_uri, plan=self._plans_uri, gateway=self._gateways_uri)
-        self._level2uris = dict(api=self._api_uri, application=self._app_uri, plan=self._plan_uri, gateway=self._gateway_uri)
+        self._level1uris = dict(api=self._apis_uri, application=self._apps_uri, plan=self._plans_uri, gateway=self._gateways_uri,service=self._services_uri,serviceaccount=self._serviceaccounts_uri)
+        self._level2uris = dict(api=self._api_uri, application=self._app_uri, plan=self._plan_uri, gateway=self._gateway_uri,service=self._service_uri,serviceaccount=self._serviceaccount_uri)
         self._level3uris = dict(apigrants=self._api_grants_uri, apicontracts=self._api_contracts_uri, apicontract=self._api_contract_uri, appregistrations=self._app_regs_uri, 
                                 gatewaydeployments=self._gw_deps_uri, apiresource=self._api_resources_uri, gatewaygrants=self._gateway_grants_uri, appgrants=self._app_grants_uri, 
                                 plangrants=self._plan_grants_uri, plansubscriptions=self._plan_subs_uri, planentitlements=self._plan_ents_uri)
@@ -397,7 +401,7 @@ class apipserver(object):
 #====================
     
     def getall(self, stufftype):
-        stufftypes = self._level1uris.keys()#("api", "application", "plan", "gateway")
+        stufftypes = self._level1uris.keys()#("api", "application", "plan", "gateway" , "service" , "serviceaccount")
         if stufftype in stufftypes: pass
         else: raise TypeError("This method can be called only for {} - got {} !".format(stufftypes, stufftype))
         
@@ -408,7 +412,7 @@ class apipserver(object):
             resp = self._s.get(url=resturi, timeout=self._timeout_tuple, auth=self._auth, headers=self._content_headers, verify=False)  
             logging.debug('*** getall {} Status code = {}'.format(stufftype, str(resp.status_code)) )
             logging.debug('*** getall {} json response = {}'.format(stufftype, resp.text) )
-            dict_res = json.loads(resp.text)  # for now this is good #@@Todo make pretty
+            dict_res = json.loads(json.dumps(resp))  # for now this is good #@@Todo make pretty
             self.disembleresponse(dict_res, stufftype, basedirname)
         return getallstuff 
     
@@ -489,10 +493,31 @@ class apipserver(object):
     
         def retrieveallstuff(): 
             resturi = self._level1uris.get(stufftype)
-            resp = self._s.get(url=resturi, timeout=self._timeout_tuple, auth=self._auth, headers=self._content_headers, verify=False)  
-            logging.debug('*** retrieve all {} Status code = {}'.format(stufftype, str(resp.status_code)))
-            #logging.info('*** retrieve all {} response = {}'.format(stufftype, resp.text))
-            allitems = json.loads(resp.text) #Todo hanndle non 200 response
+            offset=0
+            allitems = {"count":"0","items":[]}
+            items=[]
+            totalCount = 0
+            iterCount = 0
+            while True:
+                suffix="?totalResults=true&offset="+str(offset)
+                resturi_suffix=resturi+suffix
+                resp = self._s.get(url=resturi_suffix, timeout=self._timeout_tuple, auth=self._auth, headers=self._content_headers, verify=False)  
+                logging.debug('*** retrieve all {} Status code = {}'.format(stufftype, str(resp.status_code)))
+                #logging.info('*** retrieve all {} response = {}'.format(stufftype, resp.text))
+                allitems_tmp = json.loads(resp.text) #Todo hanndle non 200 response
+                hasMore= allitems_tmp.get("hasMore")
+                #logging.info('*** hasMore flag" ***'+str(hasMore))
+                if hasMore:
+                     iterCount+=1
+                     offset = offset + 128 
+                     totalCount=allitems_tmp.get("totalResults")
+                     items.append(allitems_tmp.get('items'))
+                else:
+                     break
+
+            allitems['count']=totalCount    
+            allitems['items']=items
+            allitems['iterCount']=iterCount
             return allitems          
         
         return retrieveallstuff
@@ -532,6 +557,32 @@ class apipserver(object):
     def retrieveallgateways(self): 
         resp = self._s.get(url=self._base_url+'gateways', timeout=self._timeout_tuple, auth=self._auth, headers=self._content_headers, verify=False)  
         logging.debug('*** retrieve allgateways Status code = '+str(resp.status_code))
+        #logging.info('*** retrieve allgateways response = '+resp.text) 
+        allgws = json.loads(resp.text) #Todo hanndle non 200 response
+        return allgws
+
+    def deleteapp(self, appid): 
+        resp = self._s.delete(url=self._base_url+'applications/'+appid, timeout=self._timeout_tuple, auth=self._auth, verify=False)  
+        logging.debug('*** delete app Status code = '+str(resp.status_code))
+        #logging.info('*** delete app response = '+resp.text) 
+
+    def saveprettyresponsetonewdirfile(self, response, foldername, filename):
+        return allgws
+
+    def deleteapp(self, appid): 
+        resp = self._s.delete(url=self._base_url+'applications/'+appid, timeout=self._timeout_tuple, auth=self._auth, verify=False)  
+        logging.debug('*** delete app Status code = '+str(resp.status_code))
+        #logging.info('*** delete app response = '+resp.text) 
+
+    def saveprettyresponsetonewdirfile(self, response, foldername, filename):
+        return allgws
+
+    def deleteapp(self, appid): 
+        resp = self._s.delete(url=self._base_url+'applications/'+appid, timeout=self._timeout_tuple, auth=self._auth, verify=False)  
+        logging.debug('*** delete app Status code = '+str(resp.status_code))
+        #logging.info('*** delete app response = '+resp.text) 
+
+    def saveprettyresponsetonewdirfile(self, response, foldername, filename):
         #logging.info('*** retrieve allgateways response = '+resp.text) 
         allgws = json.loads(resp.text) #Todo hanndle non 200 response
         return allgws
