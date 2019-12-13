@@ -108,6 +108,7 @@ class apipserver(object):
                 #getpass#
             elif 'oauth' in config.keys():
                 #accesstoken = config.get('accesstoken')[0]
+                logging.debug(config.get("autogenerate"))
                 accesstoken = getpass.getpass(prompt='oauth access token for accessing APIPCS :', stream=None)
                 self._auth = TokenAuth(accesstoken)
             else:

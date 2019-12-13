@@ -52,6 +52,7 @@ def loopgws(allgws): #generator func
     logging.info('***Found {} Gateways defined on the apipcs server'.format(count))
  
 def prettyprint(allapis): #generator func
+    iterCount = allapis.get("iterCount")
     for k,v in allapis.items():
        if k == "count": count=v
        if k == "items": 
@@ -59,7 +60,8 @@ def prettyprint(allapis): #generator func
            logging.info("==============listgateways===============")
            header =  ["ID", "Name", "ReleaseVersion", 'Created By', 'Created At' ]
            logging.info(header)
-           for element in items: 
+           for i in range(0,iterCount):
+              for element in items[i]:  
                apiinfo = [element.get('id'), element.get('name'), element.get('releaseVersion'), element.get('createdBy'), element.get('createdAt') ]
                logging.info(apiinfo)
                

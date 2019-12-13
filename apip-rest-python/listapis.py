@@ -57,6 +57,7 @@ def loopapis(allapis): #generator func
     logging.info('***Found {} APIs defined on the apipcs server'.format(count))
  
 def prettyprint(allapis): #generator func
+   iterCount = allapis.get("iterCount")
    for k,v in allapis.items():
        if k == "count": count=v
        if k == "items": 
@@ -64,9 +65,10 @@ def prettyprint(allapis): #generator func
            logging.info("==============listapis===============")
            header =  ["ID", "Name", "State", 'Created By', 'Created At' ]
            logging.info(header)
-           for element in items: 
-               apiinfo = [element.get('id'), element.get('name'), element.get('state'), element.get('createdBy'), element.get('createdAt') ]
-               logging.info(apiinfo)
+           for i in range(0,iterCount):
+               for element in items[i]: 
+                   apiinfo = [element.get('id'), element.get('name'), element.get('state'), element.get('createdBy'), element.get('createdAt') ]
+                   logging.info(apiinfo)
                
    logging.info('***Found {} APIs defined on the apipcs server'.format(count))
    logging.info("==============listapis===============")
