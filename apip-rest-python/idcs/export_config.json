@@ -1,0 +1,12 @@
+{
+	"server": "https://apics-url/apiplatform" ,
+	"oauth" : [],
+        "autogenerate":true,
+        "oauth_url": "https://idcs-url/oauth2/v1/token" ,
+        "client_id": "",
+        "client_secret": "",
+        "req_scope": "",
+        "user_name" : "",
+        "user_pwd" : "",
+        "proxy" : ""
+}

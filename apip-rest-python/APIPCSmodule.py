@@ -13,7 +13,9 @@ import base64
 import logging
 #from _overlapped import NULL
 import getpass
-
+from urllib.request import urlopen 
+import urllib.request
+import urllib.parse
 
 class apipserver(object):
     def __init__(self, serverargs):
@@ -94,6 +96,40 @@ class apipserver(object):
         logging.debug('apipserver::init created http session for {}'.format(self._serverurl))
         self.apimappings = {}
         self.printconfig()
+    
+    def getOauthToken(self,config):
+     if (("autogenerate" in config.keys()) and (config.get("autogenerate"))):
+       logging.info(config.get("oauth_url"))
+       logging.info(config.get("client_id"))
+       logging.info(config.get("client_secret"))
+       logging.info(config.get("req_scope"))
+       logging.info(config.get("user_name"))
+       logging.info(config.get("user_pwd"))
+       tokenIssuer = config.get("oauth_url")
+       clientId =  config.get("client_id")
+       clientSecret =  config.get("client_secret")
+       clientScope = config.get("req_scope")
+       username = config.get("user_name")
+       password = config.get("user_pwd")
+       query_args = urllib.parse.urlencode({'grant_type': 'password', 'username': username, 'password': password, 'scope': clientScope})
+       query_args = query_args.encode('utf-8')
+       request = urllib.request.Request(tokenIssuer,query_args)
+       request.add_header('Content-Type','application/x-www-form-urlencoded')
+       base64string = base64.encodestring(('%s:%s' % (clientId,clientSecret)).encode()).decode().strip().replace('\n','')
+       request.add_header('Authorization','Basic ' + base64string)
+       request.get_method = lambda: 'POST'
+       try:
+            f = urlopen(request)
+            _resp_data1 = f.read()
+            _resp_jdata = json.loads(_resp_data1)
+            _access_token = _resp_jdata['access_token']
+            return _access_token
+       except Exception as mye:
+            logging.info('Error in generating oauth token')
+            logging.info('Root Cause - {}'.format(str(mye)))
+            return
+     else:
+       return getpass.getpass(prompt='oauth access token for accessing APIPCS :', stream=None)
         
     def readconfig(self, configfile='apipcs_config.json'):
         with open(configfile, mode='rt') as config: 
@@ -108,8 +144,7 @@ class apipserver(object):
                 #getpass#
             elif 'oauth' in config.keys():
                 #accesstoken = config.get('accesstoken')[0]
-                logging.debug(config.get("autogenerate"))
-                accesstoken = getpass.getpass(prompt='oauth access token for accessing APIPCS :', stream=None)
+                accesstoken = self.getOauthToken(config)
                 self._auth = TokenAuth(accesstoken)
             else:
                 raise TypeError("Supply either basic-auth with username or oauth empty element in config file. \n Example : {}  !".
@@ -118,6 +153,7 @@ class apipserver(object):
             self._basedirname = config.get('basedir')
             return True
             
+
     def printconfig(self):
         logging.debug('Using '+self._serverurl+' ;'+str(self._proxies)+' ;'+str(self._basedirname))
             
